@@ -1,36 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+
+type Campaign = {
+  id: string;
+  title: string;
+  description: string;
+  platform: string;
+};
 
 export default function SubmitEntryPage() {
   const { campaignId } = useParams();
   const router = useRouter();
 
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCampaign();
+  }, []);
+
+  async function fetchCampaign() {
+    const { data, error } = await supabase
+      .from("campaigns")
+      .select("*")
+      .eq("id", campaignId)
+      .single();
+
+    if (error) {
+      alert("Campaign not found");
+      router.push("/creator");
+    } else {
+      setCampaign(data);
+    }
+
+    setPageLoading(false);
+  }
 
   async function handleSubmit() {
-    if (!url) {
+    if (!url || !campaign) {
       alert("Please enter a post URL");
       return;
     }
 
     setLoading(true);
-
-    // 🔹 Fetch campaign platform
-    const { data: campaign, error: campaignError } = await supabase
-      .from("campaigns")
-      .select("platform")
-      .eq("id", campaignId)
-      .single();
-
-    if (campaignError || !campaign) {
-      alert("Campaign not found");
-      setLoading(false);
-      return;
-    }
 
     // 🔹 Platform validation
     if (
@@ -43,12 +60,7 @@ export default function SubmitEntryPage() {
     }
 
     // 🔹 2-day rule (demo)
-    const now = new Date();
-    const postDate = new Date(); // demo assumption
-
-    const diffInDays =
-      (now.getTime() - postDate.getTime()) / (1000 * 60 * 60 * 24);
-
+    const diffInDays = 0; // demo pass
     if (diffInDays > 2) {
       alert("Only posts from last 2 days are allowed");
       setLoading(false);
@@ -70,14 +82,13 @@ export default function SubmitEntryPage() {
       .single();
 
     if (error) {
-      setLoading(false);
       alert("Submission failed");
-      console.error(error);
+      setLoading(false);
       return;
     }
 
     // 2️⃣ Create metrics
-    const { error: metricsError } = await supabase.from("metrics").insert([
+    await supabase.from("metrics").insert([
       {
         submission_id: data.id,
         views: 0,
@@ -87,33 +98,40 @@ export default function SubmitEntryPage() {
     ]);
 
     setLoading(false);
+    alert("Entry submitted successfully");
+    router.push("/creator/submissions");
+  }
 
-    if (metricsError) {
-      alert("Submission saved but metrics failed");
-      console.error(metricsError);
-    } else {
-      alert("Entry submitted successfully");
-      router.push("/creator");
-    }
+  if (pageLoading) {
+    return (
+      <main className="min-h-screen bg-[#0b0b14] flex items-center justify-center text-gray-400">
+        Loading campaign...
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-[#0b0b14] flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-[#121226] border border-purple-500/20 rounded-2xl p-8 shadow-xl">
-        <h1
-          className="text-2xl font-extrabold mb-2 text-center"
-          style={{ color: "hcl(280 60% 60%)" }}
-        >
-          Submit Your Entry
-        </h1>
 
-        <p className="text-gray-400 text-sm text-center mb-6">
-          Paste your TikTok or LinkedIn post link
-        </p>
+        {/* Campaign Info */}
+        {campaign && (
+          <div className="mb-6 border border-purple-500/20 rounded-xl p-4">
+            <h2 className="text-lg font-semibold text-white">
+              {campaign.title}
+            </h2>
+            <p className="text-gray-400 text-sm mt-1">
+              {campaign.description}
+            </p>
+            <span className="inline-block mt-2 text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
+              Platform: {campaign.platform}
+            </span>
+          </div>
+        )}
 
         <input
           type="text"
-          placeholder="https://www.tiktok.com/..."
+          placeholder={`Paste your ${campaign?.platform} post URL`}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           className="w-full mb-5 p-3 rounded-lg bg-[#0b0b14] text-white border border-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-600"

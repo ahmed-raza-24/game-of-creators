@@ -66,15 +66,19 @@ export default function CreatorPage() {
         >
           Creator Dashboard
         </h1>
-        <button
-            onClick={() => router.push("/creator/submissions")}
-            className="mt-4 px-5 py-2 rounded-lg bg-[#1e1e3f] text-purple-300 border border-purple-500/30 hover:bg-[#26265a] transition"
-        >
-            View My Submissions →
-        </button>
         <p className="text-gray-400">
           Explore brand campaigns and submit your content
         </p>
+        <div className="flex justify-end gap-3">
+                <button
+                  onClick={() =>
+                    router.push("/")
+                  }
+                  className="mt-8 text-sm text-gray-500 hover:text-purple-400 underline"
+                >
+                  ← Back to Home
+                </button>
+          </div>
       </div>
 
       <div className="max-w-5xl mx-auto">
@@ -103,8 +107,7 @@ export default function CreatorPage() {
               <span className="inline-block mb-4 text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
                 Platform: {c.platform}
               </span>
-
-              <div className="flex flex-wrap gap-3">
+              <div className="flex justify-end gap-3">
                 <button
                   onClick={() =>
                     router.push(`/creator/submit/${c.id}`)
@@ -114,12 +117,14 @@ export default function CreatorPage() {
                   Submit Entry
                 </button>
 
-                {/* <button
-                  onClick={refreshMetrics}
-                  className="px-5 py-2 rounded-lg bg-[#1e1e3f] text-purple-300 border border-purple-500/30 hover:bg-[#26265a] transition"
+                <button
+                  onClick={() =>
+                    router.push(`/creator/submissions/${c.id}`)
+                  }
+                  className="px-5 py-2 rounded-lg border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:scale-[1.03] transition"
                 >
-                  Refresh Metrics (Demo)
-                </button> */}
+                  View My Submissions
+                </button>
               </div>
             </div>
           ))}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 type Campaign = {
   id: string;
@@ -11,6 +12,7 @@ type Campaign = {
 };
 
 export default function BrandPage() {
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -76,6 +78,16 @@ export default function BrandPage() {
         <p className="text-gray-400">
           Launch campaigns and collaborate with creators
         </p>
+          <div className="flex justify-end gap-3">
+                <button
+                  onClick={() =>
+                    router.push("/")
+                  }
+                  className="mt-8 text-sm text-gray-500 hover:text-purple-400 underline"
+                >
+                  ← Back to Home
+                </button>
+          </div>
       </div>
 
       <div className="max-w-5xl mx-auto grid gap-8">
@@ -142,9 +154,18 @@ export default function BrandPage() {
                   {c.description}
                 </p>
 
-                <span className="text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
-                  Platform: {c.platform}
-                </span>
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                    Platform: {c.platform}
+                  </span>
+
+                  <button
+                    onClick={() => router.push(`/brand/campaigns/${c.id}`)}
+                    className="text-sm text-purple-400 hover:text-purple-300 underline"
+                  >
+                    View Details →
+                  </button>
+                </div>
               </div>
             ))}
           </div>
