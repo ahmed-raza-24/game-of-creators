@@ -1,20 +1,17 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-// IMPORTANT: Add these 2 lines at the top level
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
-function AuthCallbackContent() {
+export default function AuthCallbackPage() {
   const router = useRouter();
-  const params = useSearchParams();
 
   useEffect(() => {
     async function handleCallback() {
-      const role = params.get("role");
+      // Get the URL parameters from the browser
+      const urlParams = new URLSearchParams(window.location.search);
+      const role = urlParams.get("role");
 
       const {
         data: { user },
@@ -43,25 +40,11 @@ function AuthCallbackContent() {
     }
 
     handleCallback();
-  }, [params, router]);
+  }, [router]);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0b0b14] text-gray-400">
       Logging you in...
     </main>
-  );
-}
-
-export default function AuthCallbackPage() {
-  return (
-    <Suspense 
-      fallback={
-        <main className="min-h-screen flex items-center justify-center bg-[#0b0b14] text-gray-400">
-          Loading...
-        </main>
-      }
-    >
-      <AuthCallbackContent />
-    </Suspense>
   );
 }
