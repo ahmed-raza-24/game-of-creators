@@ -22,10 +22,11 @@ type Campaign = {
   title: string;
   description: string;
   platform: string;
+   budget?: number | null;
 };
 
 export default function BrandCampaignDetailPage() {
-    const router = useRouter();
+  const router = useRouter();
   const { id } = useParams();
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
@@ -88,17 +89,27 @@ export default function BrandCampaignDetailPage() {
   return (
     <main className="min-h-screen bg-[#0b0b1a] text-gray-200 p-8">
       {/* Header */}
-        <div className="mb-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-purple-400">
           {campaign.title}
         </h1>
+
         <p className="text-gray-400 mt-2">
           {campaign.description}
         </p>
-        <span className="inline-block mt-3 text-sm px-3 py-1 rounded-full bg-[#1e1e3f] text-purple-300">
-          Platform: {campaign.platform}
-        </span>
+
+        <div className="flex items-center gap-3 mt-3">
+          <span className="text-sm px-3 py-1 rounded-full bg-[#1e1e3f] text-purple-300">
+            Platform: {campaign.platform}
+          </span>
+
+          {campaign.budget !== null && campaign.budget !== undefined && campaign.budget > 0 && (
+            <span className="text-sm px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/30">
+              💰 Budget: ${campaign.budget}
+            </span>
+          )}
         </div>
+      </div>
 
       {/* Submissions */}
       <h2 className="text-xl font-semibold mb-4 text-purple-300">
@@ -157,15 +168,15 @@ export default function BrandCampaignDetailPage() {
           </div>
         ))}
       </div>
-              <div className="flex justify-end gap-3">
-            <button
-                onClick={() =>
-                router.push("/brand")}
-                  className="mt-8 text-sm text-gray-500 hover:text-purple-400 underline"
-                >
-                ← Brand Dashboard
-            </button>
-        </div>
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() =>
+            router.push("/brand")}
+          className="text-sm text-purple-400 hover:text-purple-300 underline cursor-pointer"
+        >
+          ← Brand Dashboard
+        </button>
+      </div>
     </main>
   );
 }

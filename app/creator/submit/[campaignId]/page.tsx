@@ -9,6 +9,7 @@ type Campaign = {
   title: string;
   description: string;
   platform: string;
+  budget?: number | null;
 };
 
 export default function SubmitEntryPage() {
@@ -27,7 +28,7 @@ export default function SubmitEntryPage() {
   async function fetchCampaign() {
     const { data, error } = await supabase
       .from("campaigns")
-      .select("*")
+      .select("id, title, description, platform, budget")
       .eq("id", campaignId)
       .single();
 
@@ -120,12 +121,23 @@ export default function SubmitEntryPage() {
             <h2 className="text-lg font-semibold text-white">
               {campaign.title}
             </h2>
+
             <p className="text-gray-400 text-sm mt-1">
               {campaign.description}
             </p>
-            <span className="inline-block mt-2 text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
-              Platform: {campaign.platform}
-            </span>
+
+            <div className="flex items-center gap-3 mt-3">
+              <span className="text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                Platform: {campaign.platform}
+              </span>
+
+              {campaign.budget !== null && campaign.budget !== undefined && (
+                <span className="text-xs px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/30">
+                  💰 {campaign.budget === 0 ? "Free" : `$${campaign.budget}`}
+                </span>
+              )}
+
+            </div>
           </div>
         )}
 
@@ -140,7 +152,7 @@ export default function SubmitEntryPage() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:scale-[1.03] transition disabled:opacity-50"
+          className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold cursor-pointer hover:scale-[1.03] transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Submitting..." : "Submit Entry"}
         </button>
