@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+// IMPORTANT: Add these 2 lines at the top level
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -41,11 +43,25 @@ export default function AuthCallbackPage() {
     }
 
     handleCallback();
-  }, []);
+  }, [params, router]);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0b0b14] text-gray-400">
       Logging you in...
     </main>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense 
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-[#0b0b14] text-gray-400">
+          Loading...
+        </main>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
