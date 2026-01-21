@@ -9,34 +9,49 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     async function handleCallback() {
-      // Get the URL parameters from the browser
-      const urlParams = new URLSearchParams(window.location.search);
-      const role = urlParams.get("role");
+      try {
+        // Wait for Supabase to process the OAuth callback
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth error:", error);
+          router.replace("/");
+          return;
+        }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        if (!session?.user) {
+          console.log("No user found after OAuth");
+          router.replace("/");
+          return;
+        }
 
-      if (!user) {
+        // Get role from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const role = urlParams.get("role") || "creator";
+
+        // Check if user exists in database
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("id")
+          .eq("id", session.user.id)
+          .single();
+
+        // Create user if doesn't exist
+        if (!existingUser) {
+          await supabase.from("users").insert({
+            id: session.user.id,
+            email: session.user.email,
+            role: role,
+          });
+        }
+
+        // Redirect based on role
+        router.replace(role === "brand" ? "/brand" : "/creator");
+        
+      } catch (error) {
+        console.error("Callback error:", error);
         router.replace("/");
-        return;
       }
-
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", user.id)
-        .single();
-
-      if (!existingUser) {
-        await supabase.from("users").insert({
-          id: user.id,
-          email: user.email,
-          role: role ?? "creator",
-        });
-      }
-
-      router.replace(role === "brand" ? "/brand" : "/creator");
     }
 
     handleCallback();

@@ -6,14 +6,23 @@ import { supabase } from "@/lib/supabaseClient";
 export default function HomePage() {
   const router = useRouter();
 
-  async function signIn(role: "creator" | "brand") {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${location.origin}/auth/callback?role=${role}`,
-      },
-    });
+async function signIn(role: "creator" | "brand") {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent'
+      }
+    },
+  });
+
+  if (error) {
+    console.error("Sign in error:", error);
+    alert("Login failed. Please try again.");
   }
+}
 
   return (
     <main className="bg-[#080812] text-white overflow-hidden">
