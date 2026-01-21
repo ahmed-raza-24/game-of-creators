@@ -74,7 +74,15 @@ export default function LinkedInConnectDemoPage() {
               Connect your actual LinkedIn account using OAuth
             </p>
             <button
-              onClick={connectRealLinkedIn}
+              onClick={() => {
+                // Check if client ID exists
+                if (!process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID) {
+                  alert("LinkedIn is temporarily unavailable. Using demo mode.");
+                  connectDemoLinkedIn();
+                } else {
+                  connectRealLinkedIn();
+                }
+              }}
               className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition"
             >
               Connect with LinkedIn
