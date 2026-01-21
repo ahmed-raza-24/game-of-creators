@@ -120,14 +120,13 @@ function CreatorContent() {
             <button
               onClick={() => {
                 if (!linkedinConnected) {
-                  window.location.href = getLinkedInAuthUrl();
+                  router.push("/auth/linkedin"); // Go to LinkedIn connect page
                 }
               }}
-              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${
-                linkedinConnected
+              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${linkedinConnected
                   ? "bg-green-500/10 text-green-400 border-green-500/40"
                   : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
-              }`}
+                }`}
             >
               {linkedinConnected
                 ? "✅ LinkedIn Connected"
@@ -207,7 +206,7 @@ function CreatorContent() {
 // Main page component with Suspense
 export default function CreatorPage() {
   return (
-    <Suspense 
+    <Suspense
       fallback={
         <main className="min-h-screen bg-[#0b0b14] flex items-center justify-center">
           <p className="text-gray-400">Loading dashboard...</p>
