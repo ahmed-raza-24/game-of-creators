@@ -86,6 +86,17 @@ export default function BrandPage() {
           >
             ← Back to Home
           </button>
+          
+          {/* ✅ LOGOUT BUTTON ADDED */}
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.push("/");
+            }}
+            className="mt-6 ml-4 text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
+          >
+            Logout
+          </button>
         </div>
       </div>
 

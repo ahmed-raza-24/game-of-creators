@@ -1,61 +1,49 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+
+export const dynamic = "force-dynamic";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const params = useSearchParams();
 
   useEffect(() => {
-    async function handleCallback() {
-      try {
-        // Wait for Supabase to process the OAuth callback
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Auth error:", error);
-          router.replace("/");
-          return;
-        }
+    async function handleAuth() {
+      const role = params.get("role") ?? "creator";
 
-        if (!session?.user) {
-          console.log("No user found after OAuth");
-          router.replace("/");
-          return;
-        }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-        // Get role from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const role = urlParams.get("role") || "creator";
-
-        // Check if user exists in database
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("id")
-          .eq("id", session.user.id)
-          .single();
-
-        // Create user if doesn't exist
-        if (!existingUser) {
-          await supabase.from("users").insert({
-            id: session.user.id,
-            email: session.user.email,
-            role: role,
-          });
-        }
-
-        // Redirect based on role
-        router.replace(role === "brand" ? "/brand" : "/creator");
-        
-      } catch (error) {
-        console.error("Callback error:", error);
+      if (!user) {
         router.replace("/");
+        return;
       }
+
+      // ensure user exists in public.users
+      const { data: existing } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      if (!existing) {
+        await supabase.from("users").insert({
+          id: user.id,
+          email: user.email,
+          role,
+        });
+      }
+
+      // ✅ FINAL REDIRECT
+      router.replace(role === "brand" ? "/brand" : "/creator");
     }
 
-    handleCallback();
-  }, [router]);
+    handleAuth();
+  }, []);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0b0b14] text-gray-400">

@@ -123,10 +123,11 @@ function CreatorContent() {
                   router.push("/auth/linkedin"); // Go to LinkedIn connect page
                 }
               }}
-              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${linkedinConnected
+              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${
+                linkedinConnected
                   ? "bg-green-500/10 text-green-400 border-green-500/40"
                   : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
-                }`}
+              }`}
             >
               {linkedinConnected
                 ? "✅ LinkedIn Connected"
@@ -135,9 +136,20 @@ function CreatorContent() {
 
             <button
               onClick={() => router.push("/")}
-              className="text-sm text-gray-400 hover:text-purple-400 underline ml-2 cursor-pointer"
+              className="text-sm text-gray-400 hover:text-purple-400 underline cursor-pointer"
             >
               Home
+            </button>
+
+            {/* ✅ LOGOUT BUTTON ADDED */}
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.push("/");
+              }}
+              className="text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
+            >
+              Logout
             </button>
           </div>
         </div>

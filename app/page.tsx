@@ -6,23 +6,23 @@ import { supabase } from "@/lib/supabaseClient";
 export default function HomePage() {
   const router = useRouter();
 
-async function signIn(role: "creator" | "brand") {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent'
-      }
-    },
-  });
+  async function signIn(role: "creator" | "brand") {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
+      },
+    });
 
-  if (error) {
-    console.error("Sign in error:", error);
-    alert("Login failed. Please try again.");
+    if (error) {
+      console.error("Sign in error:", error);
+      alert("Login failed. Please try again.");
+    }
   }
-}
 
   return (
     <main className="bg-[#080812] text-white overflow-hidden">
@@ -31,7 +31,7 @@ async function signIn(role: "creator" | "brand") {
         {/* Glow background */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#6d28d955,transparent_60%)]" />
 
-        <div className="relative bg-[#121226]/80 backdrop-blur-xl border border-purple-500/30 p-10 rounded-3xl shadow-[0_0_60px_-15px_rgba(168,85,247,0.6)] w-full max-w-md text-center">
+        <div className="relative bg-[#121226]/80 backdrop-blur-xl border border-purple-500/30 p-10 rounded-3xl shadow-[0_0_60px_-15px rgba(168,85,247,0.6)] w-full max-w-md text-center">
           <h1 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
             Game of Creators
           </h1>
@@ -69,7 +69,6 @@ async function signIn(role: "creator" | "brand") {
         >
           How It Works
         </h2>
-
 
         <div className="grid md:grid-cols-3 gap-10">
           {[
