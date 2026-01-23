@@ -11,42 +11,28 @@ export default function AuthCallbackPage() {
   const params = useSearchParams();
 
   useEffect(() => {
-    async function handleAuth() {
-      const role = params.get("role") ?? "creator";
+    async function run() {
+      // 🔥 this completes OAuth
+      const { data, error } = await supabase.auth.exchangeCodeForSession(
+        window.location.href
+      );
+      console.log("FULL CALLBACK URL:", window.location.href);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
+      if (error || !data.session) {
+        console.error(error);
         router.replace("/");
         return;
       }
 
-      // ensure user exists in public.users
-      const { data: existing } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", user.id)
-        .single();
-
-      if (!existing) {
-        await supabase.from("users").insert({
-          id: user.id,
-          email: user.email,
-          role,
-        });
-      }
-
-      // ✅ FINAL REDIRECT
+      const role = params.get("role") ?? "creator";
       router.replace(role === "brand" ? "/brand" : "/creator");
     }
 
-    handleAuth();
+    run();
   }, []);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#0b0b14] text-gray-400">
+    <main className="min-h-screen flex items-center justify-center text-gray-400">
       Logging you in...
     </main>
   );
