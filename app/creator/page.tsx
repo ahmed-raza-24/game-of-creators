@@ -27,6 +27,17 @@ function CreatorContent() {
   const [tiktokConnected, setTiktokConnected] = useState(false);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
 
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        router.push("/");
+      }
+    };
+    checkAuth();
+  }, []);
+
   // ✅ ONE clean useEffect
   useEffect(() => {
     fetchCampaigns();
@@ -123,11 +134,10 @@ function CreatorContent() {
                   router.push("/auth/linkedin"); // Go to LinkedIn connect page
                 }
               }}
-              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${
-                linkedinConnected
+              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${linkedinConnected
                   ? "bg-green-500/10 text-green-400 border-green-500/40"
                   : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
-              }`}
+                }`}
             >
               {linkedinConnected
                 ? "✅ LinkedIn Connected"

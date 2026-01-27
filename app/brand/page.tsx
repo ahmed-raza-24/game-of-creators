@@ -21,6 +21,17 @@ export default function BrandPage() {
   const [budget, setBudget] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
 
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        router.push("/");
+      }
+    };
+    checkAuth();
+  }, []);
+
   useEffect(() => {
     fetchCampaigns();
   }, []);
@@ -86,7 +97,7 @@ export default function BrandPage() {
           >
             ← Back to Home
           </button>
-          
+
           {/* ✅ LOGOUT BUTTON ADDED */}
           <button
             onClick={async () => {
