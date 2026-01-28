@@ -50,7 +50,17 @@ export default function SubmitEntryPage() {
 
     setLoading(true);
 
-    // 🔹 Platform validation
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      alert("Please login first");
+      router.push("/");
+      setLoading(false);
+      return;
+    }
+
+    // Platform validation
     if (
       (campaign.platform === "tiktok" && !url.includes("tiktok.com")) ||
       (campaign.platform === "linkedin" && !url.includes("linkedin.com"))
@@ -60,47 +70,46 @@ export default function SubmitEntryPage() {
       return;
     }
 
-    // 🔹 2-day rule (demo)
-    const diffInDays = 0; // demo pass
-    if (diffInDays > 2) {
-      alert("Only posts from last 2 days are allowed");
+    try {
+      // 1️⃣ Create submission WITH creator_id
+      const { data: submission, error } = await supabase
+        .from("submissions")
+        .insert([
+          {
+            campaign_id: campaignId,
+            creator_id: user.id, // ✅ Now using actual user ID
+            post_url: url,
+            status: "pending",
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // 2️⃣ Create metrics
+      const { error: metricsError } = await supabase
+        .from("metrics")
+        .insert([
+          {
+            submission_id: submission.id,
+            views: 0,
+            likes: 0,
+            comments: 0,
+          },
+        ]);
+
+      if (metricsError) throw metricsError;
+
       setLoading(false);
-      return;
-    }
-
-    // 1️⃣ Create submission
-    const { data, error } = await supabase
-      .from("submissions")
-      .insert([
-        {
-          campaign_id: campaignId,
-          creator_id: null, // auth later
-          post_url: url,
-          status: "pending",
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      alert("Submission failed");
+      alert("Entry submitted successfully");
+      router.push(`/creator/submissions/${campaignId}`);
+      
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Submission failed. Please try again.");
       setLoading(false);
-      return;
     }
-
-    // 2️⃣ Create metrics
-    await supabase.from("metrics").insert([
-      {
-        submission_id: data.id,
-        views: 0,
-        likes: 0,
-        comments: 0,
-      },
-    ]);
-
-    setLoading(false);
-    alert("Entry submitted successfully");
-    router.push("/creator/submissions");
   }
 
   if (pageLoading) {
@@ -136,7 +145,6 @@ export default function SubmitEntryPage() {
                   💰 {campaign.budget === 0 ? "Free" : `$${campaign.budget}`}
                 </span>
               )}
-
             </div>
           </div>
         )}

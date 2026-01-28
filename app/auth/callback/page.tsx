@@ -1,62 +1,96 @@
-// app/auth/callback/page.tsx - UPDATE
+// app/auth/callback/page.tsx - FIXED FOR PKCE
 "use client";
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export const dynamic = "force-dynamic";
-
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const params = useSearchParams();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    async function run() {
+    async function handleCallback() {
       try {
-        // Get current URL
-        const currentUrl = window.location.href;
+        // Get the current URL hash and search parameters
+        const hash = window.location.hash;
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const code = urlSearchParams.get('code');
+        const error = urlSearchParams.get('error');
         
-        // Check if it's a callback from OAuth
-        const url = new URL(currentUrl);
-        const hasCode = url.searchParams.has('code');
-        
-        if (hasCode) {
-          // Exchange code for session
-          const { data, error } = await supabase.auth.exchangeCodeForSession(currentUrl);
+        if (error) {
+          console.error("OAuth error:", error);
+          router.push("/");
+          return;
+        }
 
-          if (error) {
-            console.error("Auth error:", error);
-            router.replace("/");
+        // Check if we have a code in URL (OAuth callback)
+        if (code || hash.includes('access_token')) {
+          // Let Supabase handle the OAuth callback automatically
+          // It will read the code from URL and exchange it for session
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error("Session error:", sessionError);
+            router.push("/");
             return;
           }
 
-          if (data.session) {
-            const role = params.get("role") ?? "creator";
-            router.replace(role === "brand" ? "/brand" : "/creator");
-          }
-        } else {
-          // Already logged in?
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            const role = params.get("role") ?? "creator";
+          if (session?.user) {
+            // Check if user exists in our database
+            const { data: existingUser } = await supabase
+              .from("users")
+              .select("*")
+              .eq("id", session.user.id)
+              .single();
+
+            // If new user, insert into database
+            if (!existingUser) {
+              const role = searchParams.get("role") || "creator";
+              const { error: insertError } = await supabase
+                .from("users")
+                .insert([
+                  {
+                    id: session.user.id,
+                    name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || "User",
+                    email: session.user.email,
+                    role: role,
+                  },
+                ]);
+
+              if (insertError) {
+                console.error("Error inserting user:", insertError);
+              }
+            }
+
+            // Redirect based on role
+            const role = searchParams.get("role") || existingUser?.role || "creator";
             router.replace(role === "brand" ? "/brand" : "/creator");
           } else {
-            router.replace("/");
+            router.push("/");
+          }
+        } else {
+          // No OAuth code, check existing session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const role = searchParams.get("role") || "creator";
+            router.replace(role === "brand" ? "/brand" : "/creator");
+          } else {
+            router.push("/");
           }
         }
       } catch (error) {
-        console.error("Callback error:", error);
-        router.replace("/");
+        console.error("Auth callback error:", error);
+        router.push("/");
       }
     }
 
-    run();
-  }, [router, params]);
+    handleCallback();
+  }, [router, searchParams]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center text-gray-400">
-      Logging you in...
+    <main className="min-h-screen flex items-center justify-center bg-[#0b0b14]">
+      <p className="text-gray-400">Authenticating...</p>
     </main>
   );
 }

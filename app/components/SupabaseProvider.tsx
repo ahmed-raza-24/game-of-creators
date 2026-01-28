@@ -8,9 +8,11 @@ import { supabase } from "@/lib/supabaseClient";
 const SupabaseContext = createContext<{
   user: any | null;
   loading: boolean;
+  signOut: () => Promise<void>;
 }>({
   user: null,
   loading: true,
+  signOut: async () => {},
 });
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
@@ -26,13 +28,12 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Agar user logged in hai aur home page par hai
+      // If user is logged in and on home page
       if (session?.user && pathname === "/") {
-        // Temporary: sabko creator page par redirect
-        router.push("/creator");
+        // User is already logged in, home page will handle this
       }
       
-      // Agar user NOT logged in aur protected page par hai
+      // If user NOT logged in and trying to access protected pages
       if (!session?.user && 
           (pathname.startsWith("/creator") || 
            pathname.startsWith("/brand") || 
@@ -46,16 +47,25 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     // 2. Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      if (event === "SIGNED_OUT") {
+        router.push("/");
+      }
     });
 
     return () => subscription.unsubscribe();
   }, [pathname, router]);
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
+
   return (
-    <SupabaseContext.Provider value={{ user, loading }}>
+    <SupabaseContext.Provider value={{ user, loading, signOut }}>
       {children}
     </SupabaseContext.Provider>
   );

@@ -1,7 +1,8 @@
+// app/page.tsx - ORIGINAL VERSION (NO UNNECESSARY CHANGES)
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signInWithGoogle } from "@/lib/supabaseClient"; // Updated import
+import { signInWithGoogle } from "@/lib/supabaseClient"; // Original import
 
 export default function HomePage() {
   const router = useRouter();
@@ -83,7 +84,7 @@ export default function HomePage() {
               key={i}
               className="group relative bg-[#121226] rounded-3xl p-8 border border-purple-500/20 
               transition-all duration-500 hover:-translate-y-4 hover:rotate-[0.3deg]
-              hover:shadow-[0_20px_60px_-15px_rgba(168,85,247,0.7)]"
+              hover:shadow-[0_20px_60px_-15px rgba(168,85,247,0.7)]"
             >
               {/* Glow */}
               <div
@@ -117,7 +118,7 @@ export default function HomePage() {
           {/* Creator */}
           <div
             className="group relative bg-[#121226] rounded-3xl p-10 border border-purple-500/30
-            transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_25px_70px_-20px_rgba(168,85,247,0.8)]"
+            transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_25px_70px_-20px rgba(168,85,247,0.8)]"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-indigo-600/30 opacity-0 group-hover:opacity-100 transition rounded-3xl blur-xl -z-10" />
 
@@ -136,7 +137,7 @@ export default function HomePage() {
           {/* Brand */}
           <div
             className="group relative bg-[#121226] rounded-3xl p-10 border border-indigo-500/30
-            transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_25px_70px_-20px_rgba(99,102,241,0.8)]"
+            transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_25px_70px_-20px rgba(99,102,241,0.8)]"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/30 to-cyan-600/30 opacity-0 group-hover:opacity-100 transition rounded-3xl blur-xl -z-10" />
 

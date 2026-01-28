@@ -1,4 +1,4 @@
-// lib/supabaseClient.ts
+// lib/supabaseClient.ts - FIXED VERSION (NO DESIGN CHANGES)
 import { createClient } from "@supabase/supabase-js";
 
 // Dynamic redirect URL
@@ -20,13 +20,14 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false,
+      detectSessionInUrl: true, // ✅ CHANGE: true se karo
       flowType: "pkce",
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
   }
 );
 
-// Helper function for OAuth
+// Helper function for OAuth - EXACT SAME AS BEFORE
 export const signInWithGoogle = async (role: "creator" | "brand") => {
   const redirectTo = getRedirectUrl();
   
