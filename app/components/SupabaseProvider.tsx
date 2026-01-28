@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const SupabaseContext = createContext<{
@@ -17,13 +17,31 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // 1. Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setLoading(false);
-    });
+      
+      // Agar user logged in hai aur home page par hai
+      if (session?.user && pathname === "/") {
+        // Temporary: sabko creator page par redirect
+        router.push("/creator");
+      }
+      
+      // Agar user NOT logged in aur protected page par hai
+      if (!session?.user && 
+          (pathname.startsWith("/creator") || 
+           pathname.startsWith("/brand") || 
+           pathname.startsWith("/admin"))) {
+        router.push("/");
+      }
+    };
+
+    checkSession();
 
     // 2. Listen for auth changes
     const {
@@ -34,20 +52,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  // 🔥 IMPORTANT: If user is logged in AND on home page, redirect to dashboard
-  useEffect(() => {
-    if (!loading && user) {
-      const currentPath = window.location.pathname;
-      // Agar user logged in hai aur home page ya auth page par hai
-      if (currentPath === "/" || currentPath.startsWith("/auth")) {
-        // Yahan aap user ki role check karke redirect karo
-        // Temporary: sabko creator page par redirect
-        router.push("/creator");
-      }
-    }
-  }, [user, loading, router]);
+  }, [pathname, router]);
 
   return (
     <SupabaseContext.Provider value={{ user, loading }}>

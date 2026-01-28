@@ -1,43 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import { useEffect } from "react";
+import { signInWithGoogle } from "@/lib/supabaseClient"; // Updated import
 
 export default function HomePage() {
   const router = useRouter();
 
-  useEffect(() => {
-    // Check agar user already logged in hai
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        router.push("/creator"); // Ya role ke hisaab se redirect
-      }
-    });
-  }, [router]);
-
   async function signIn(role: "creator" | "brand") {
-    // Agar already session hai to redirect
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      router.push(role === "brand" ? "/brand" : "/creator");
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent'
-        }
-      },
-    });
-
-    if (error) {
-      console.error("Sign in error:", error);
+    try {
+      await signInWithGoogle(role);
+    } catch (error) {
       alert("Login failed. Please try again.");
+      console.error(error);
     }
   }
 

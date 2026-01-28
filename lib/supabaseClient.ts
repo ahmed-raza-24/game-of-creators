@@ -1,4 +1,17 @@
+// lib/supabaseClient.ts
 import { createClient } from "@supabase/supabase-js";
+
+// Dynamic redirect URL
+const getRedirectUrl = () => {
+  // Server side (build time)
+  if (typeof window === 'undefined') {
+    return process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}/auth/callback`
+      : 'http://localhost:3000/auth/callback';
+  }
+  // Client side
+  return `${window.location.origin}/auth/callback`;
+};
 
 export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,8 +20,29 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false, // 🔥 IMPORTANT
-      flowType: "pkce",          // 🔥 THIS FIXES #
+      detectSessionInUrl: false,
+      flowType: "pkce",
     },
   }
 );
+
+// Helper function for OAuth
+export const signInWithGoogle = async (role: "creator" | "brand") => {
+  const redirectTo = getRedirectUrl();
+  
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${redirectTo}?role=${role}`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent'
+      }
+    },
+  });
+
+  if (error) {
+    console.error("Google OAuth error:", error);
+    throw error;
+  }
+};
