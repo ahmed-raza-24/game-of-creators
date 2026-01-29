@@ -1,4 +1,4 @@
-// app/layout.tsx - SIMPLIFIED VERSION
+// app/layout.tsx - SIMPLIFIED
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SupabaseProvider } from "@/app/components/SupabaseProvider";

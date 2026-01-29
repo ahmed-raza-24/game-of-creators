@@ -12,44 +12,53 @@ export default function TikTokConnectPage() {
   async function connectDemoTikTok() {
     setLoading(true);
 
-    // 🔹 get logged-in user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      // 🔹 get logged-in user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      alert("Please login again");
-      router.push("/");
-      return;
-    }
+      if (!user) {
+        alert("Please login again");
+        router.push("/");
+        return;
+      }
 
-    // 🔹 DEMO connect (no real OAuth)
-    const { error } = await supabase
-      .from("creator_social_accounts")
-      .upsert(
-        {
-          user_id: user.id,
-          provider: "tiktok",
-          profile_data: {
-            demo: true,
-            connected_at: new Date().toISOString(),
-            username: "demo_tiktok_user",
-            followers: 10000,
+      console.log("User ID:", user.id);
+
+      // 🔹 Try with minimal data first
+      const { error } = await supabase
+        .from("creator_social_accounts")
+        .upsert(
+          {
+            user_id: user.id,
+            provider: "tiktok",
           },
-        },
-        {
-          onConflict: "user_id,provider",
-        }
-      );
+          {
+            onConflict: "user_id,provider",
+          }
+        );
 
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-      console.error(error);
-      alert("Failed to connect TikTok (demo)");
-    } else {
-      alert("TikTok connected (demo)");
-      router.push("/creator?connected=tiktok");
+      if (error) {
+        // Better error logging
+        console.error("TikTok connect error details:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+
+        alert(`Failed to connect TikTok: ${error.message || "Unknown error"}`);
+      } else {
+        alert("TikTok connected (demo)");
+        router.push("/creator?connected=tiktok");
+      }
+    } catch (err: any) {
+      setLoading(false);
+      console.error("Catch block error:", err);
+      alert(`Unexpected error: ${err.message}`);
     }
   }
 
@@ -75,21 +84,19 @@ export default function TikTokConnectPage() {
           <div className="flex gap-2 mb-4">
             <button
               onClick={() => setSelectedOption("demo")}
-              className={`flex-1 py-2 rounded-lg ${
-                selectedOption === "demo"
+              className={`flex-1 py-2 rounded-lg ${selectedOption === "demo"
                   ? "bg-purple-600 text-white"
                   : "bg-[#1a1a2e] text-gray-400"
-              }`}
+                }`}
             >
               Demo Mode
             </button>
             <button
               onClick={() => setSelectedOption("real")}
-              className={`flex-1 py-2 rounded-lg ${
-                selectedOption === "real"
+              className={`flex-1 py-2 rounded-lg ${selectedOption === "real"
                   ? "bg-purple-600 text-white"
                   : "bg-[#1a1a2e] text-gray-400"
-              }`}
+                }`}
             >
               Real OAuth
             </button>
@@ -141,6 +148,28 @@ export default function TikTokConnectPage() {
           className="text-sm text-gray-500 hover:text-purple-400 underline"
         >
           ← Back to Creator Dashboard
+        </button>
+        <button
+          onClick={async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+              alert("Not logged in");
+              return;
+            }
+
+            // Test query
+            const { data, error } = await supabase
+              .from("creator_social_accounts")
+              .select("*")
+              .eq("user_id", user.id)
+              .eq("provider", "tiktok");
+
+            console.log("Test query result:", { data, error });
+            alert(`Existing connection: ${data?.length ? "Yes" : "No"}\nError: ${error?.message || "None"}`);
+          }}
+          className="w-full mt-2 py-2 rounded-lg bg-gray-700 text-white text-sm"
+        >
+          Check Existing Connection
         </button>
       </div>
     </main>

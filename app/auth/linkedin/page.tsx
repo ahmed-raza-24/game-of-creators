@@ -12,41 +12,49 @@ export default function LinkedInConnectDemoPage() {
   async function connectDemoLinkedIn() {
     setLoading(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      alert("Please login again");
-      router.push("/");
-      return;
-    }
+      if (!user) {
+        alert("Please login again");
+        router.push("/");
+        return;
+      }
 
-    const { error } = await supabase
-      .from("creator_social_accounts")
-      .upsert(
-        {
-          user_id: user.id,
-          provider: "linkedin",
-          // Add demo data
-          profile_data: {
-            demo: true,
-            connected_at: new Date().toISOString(),
+      // Try without profile_data (same as TikTok fix)
+      const { error } = await supabase
+        .from("creator_social_accounts")
+        .upsert(
+          {
+            user_id: user.id,
+            provider: "linkedin",
           },
-        },
-        {
-          onConflict: "user_id,provider",
-        }
-      );
+          {
+            onConflict: "user_id,provider",
+          }
+        );
 
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-      console.error(error);
-      alert("Failed to connect LinkedIn (demo)");
-    } else {
-      alert("LinkedIn connected (demo)");
-      router.push("/creator?connected=linkedin");
+      if (error) {
+        // Better error logging
+        console.error("LinkedIn connect error details:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        alert(`Failed to connect LinkedIn: ${error.message || "Unknown error"}`);
+      } else {
+        alert("LinkedIn connected (demo)");
+        router.push("/creator?connected=linkedin");
+      }
+    } catch (err: any) {
+      setLoading(false);
+      console.error("Unexpected error:", err);
+      alert(`Unexpected error: ${err.message}`);
     }
   }
 

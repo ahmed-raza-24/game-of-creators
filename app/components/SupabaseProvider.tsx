@@ -1,4 +1,4 @@
-// app/components/SupabaseProvider.tsx
+// app/components/SupabaseProvider.tsx - FIXED VERSION
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -28,12 +28,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // If user is logged in and on home page
-      if (session?.user && pathname === "/") {
-        // User is already logged in, home page will handle this
-      }
+      // ✅ REMOVED: Automatic redirect when user is on home page
+      // ✅ REMOVED: Automatic logout when accessing protected pages
+      // User ko home page pe bhi rehne do, wo khud click karega
       
-      // If user NOT logged in and trying to access protected pages
+      // ✅ ONLY THIS: If user NOT logged in and trying to access protected pages
       if (!session?.user && 
           (pathname.startsWith("/creator") || 
            pathname.startsWith("/brand") || 
@@ -51,9 +50,13 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
       
+      // ✅ ONLY logout event pe redirect karo
       if (event === "SIGNED_OUT") {
         router.push("/");
       }
+      
+      // ✅ SIGNED_IN event pe automatic redirect hata do
+      // User ko khud decide karne do kahin jana hai ya nahi
     });
 
     return () => subscription.unsubscribe();

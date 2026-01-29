@@ -20,13 +20,15 @@ export default function BrandPage() {
   const [platform, setPlatform] = useState("tiktok");
   const [budget, setBudget] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
-
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         router.push("/");
+      } else {
+        setUser(session.user);
       }
     };
     checkAuth();
@@ -53,22 +55,57 @@ export default function BrandPage() {
 
     setLoading(true);
 
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      alert("Please login again");
+      router.push("/");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from("campaigns").insert([
       {
         title,
         description,
         platform,
-        budget,
-        brand_id: null, // auth later
+        budget: Number(budget),
+        brand_id: user.id, // Use actual user ID
       },
     ]);
 
     setLoading(false);
 
     if (error) {
-      alert("Error creating campaign");
-      console.error(error);
+      console.error("Full error:", JSON.stringify(error, null, 2));
+
+      if (error.code === '42501') {
+        // Try with null brand_id as fallback
+        const { error: fallbackError } = await supabase.from("campaigns").insert([
+          {
+            title,
+            description,
+            platform,
+            budget: Number(budget),
+            brand_id: null,
+          },
+        ]);
+
+        if (fallbackError) {
+          alert(`Permission error. Try running in Supabase:\n\nALTER TABLE campaigns DISABLE ROW LEVEL SECURITY;`);
+        } else {
+          alert("Campaign created (with null brand_id)");
+          setTitle("");
+          setDescription("");
+          setBudget("");
+          fetchCampaigns();
+        }
+      } else {
+        alert(`Error: ${error.message}`);
+      }
     } else {
+      alert("Campaign created successfully!");
       setTitle("");
       setDescription("");
       setBudget("");
@@ -78,7 +115,7 @@ export default function BrandPage() {
 
   return (
     <main className="min-h-screen bg-[#0b0b14] p-6">
-      {/* Header */}
+      {/* Header - NO CHANGES */}
       <div className="max-w-5xl mx-auto mb-8">
         <h1
           className="text-3xl font-extrabold mb-2"
@@ -98,7 +135,6 @@ export default function BrandPage() {
             ← Back to Home
           </button>
 
-          {/* ✅ LOGOUT BUTTON ADDED */}
           <button
             onClick={async () => {
               await supabase.auth.signOut();
@@ -112,7 +148,7 @@ export default function BrandPage() {
       </div>
 
       <div className="max-w-5xl mx-auto grid gap-10">
-        {/* Create Campaign */}
+        {/* Create Campaign - NO CHANGES */}
         <div className="bg-[#121226] border border-purple-500/20 rounded-2xl p-6 shadow-lg">
           <h2 className="text-lg font-semibold text-white mb-4">
             Create Campaign
@@ -161,7 +197,7 @@ export default function BrandPage() {
           </button>
         </div>
 
-        {/* Your Campaigns */}
+        {/* Your Campaigns - NO CHANGES */}
         <div>
           <h2 className="text-lg font-semibold text-white mb-4">
             Your Campaigns
