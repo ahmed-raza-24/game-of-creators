@@ -17,7 +17,7 @@ export default function AuthCallbackPage() {
         const urlSearchParams = new URLSearchParams(window.location.search);
         const code = urlSearchParams.get('code');
         const error = urlSearchParams.get('error');
-        
+
         if (error) {
           console.error("OAuth error:", error);
           router.push("/");
@@ -28,8 +28,10 @@ export default function AuthCallbackPage() {
         if (code || hash.includes('access_token')) {
           // Let Supabase handle the OAuth callback automatically
           // It will read the code from URL and exchange it for session
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          
+          // Let Supabase handle the callback
+          const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(window.location.href);
+          const session = data?.session;
+
           if (sessionError) {
             console.error("Session error:", sessionError);
             router.push("/");

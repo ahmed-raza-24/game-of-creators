@@ -20,8 +20,9 @@
   ],
   "rewrites": [
     {
-      "source": "/auth/callback",
-      "destination": "/auth/callback"
+      "source": "/auth/:path*",
+      "destination": "/auth/:path*"
     }
-  ]
+  ],
+  "redirects": []
 }
