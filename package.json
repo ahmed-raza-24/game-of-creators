@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "vercel-build": "npm run build" 
+    "vercel-build": "npm run build"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.90.1",
+    "@supabase/supabase-js": "^2.93.2",
     "next": "16.1.3",
     "react": "19.2.3",
     "react-dom": "19.2.3"

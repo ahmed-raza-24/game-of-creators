@@ -1,11 +1,12 @@
-// app/auth/callback/page.tsx - FIXED FOR PKCE
+// app/auth/callback/page.tsx - UPDATED WITH SUSPENSE
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function AuthCallbackPage() {
+// Main callback component
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -17,7 +18,7 @@ export default function AuthCallbackPage() {
         const urlSearchParams = new URLSearchParams(window.location.search);
         const code = urlSearchParams.get('code');
         const error = urlSearchParams.get('error');
-
+        
         if (error) {
           console.error("OAuth error:", error);
           router.push("/");
@@ -28,10 +29,8 @@ export default function AuthCallbackPage() {
         if (code || hash.includes('access_token')) {
           // Let Supabase handle the OAuth callback automatically
           // It will read the code from URL and exchange it for session
-          // Let Supabase handle the callback
-          const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-          const session = data?.session;
-
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
           if (sessionError) {
             console.error("Session error:", sessionError);
             router.push("/");
@@ -94,5 +93,18 @@ export default function AuthCallbackPage() {
     <main className="min-h-screen flex items-center justify-center bg-[#0b0b14]">
       <p className="text-gray-400">Authenticating...</p>
     </main>
+  );
+}
+
+// Main page with Suspense
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center bg-[#0b0b14]">
+        <p className="text-gray-400">Loading...</p>
+      </main>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

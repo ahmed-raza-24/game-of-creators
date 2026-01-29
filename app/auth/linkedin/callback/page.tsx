@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function LinkedInCallbackPage() {
+// Main callback component wrapped in Suspense
+function LinkedInCallbackContent() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -58,5 +59,18 @@ export default function LinkedInCallbackPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0b0b14]">
       <p className="text-gray-400">Connecting LinkedIn...</p>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function LinkedInCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#0b0b14]">
+        <p className="text-gray-400">Loading...</p>
+      </div>
+    }>
+      <LinkedInCallbackContent />
+    </Suspense>
   );
 }

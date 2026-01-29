@@ -3,10 +3,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Updated images configuration
   images: {
-    domains: ['lh3.googleusercontent.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '**',
+      },
+    ],
   },
-  // Remove env object as it's not needed
 };
 
 module.exports = nextConfig;

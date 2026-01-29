@@ -1,7 +1,10 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 "use client";
 
 // Add these to prevent any prerendering issues
-export const dynamic = "force-dynamic";
+
 export const fetchCache = "force-no-store";
 
 import { useEffect, useState, Suspense } from "react";
@@ -134,10 +137,11 @@ function CreatorContent() {
                   router.push("/auth/linkedin"); // Go to LinkedIn connect page
                 }
               }}
-              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${linkedinConnected
+              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${
+                linkedinConnected
                   ? "bg-green-500/10 text-green-400 border-green-500/40"
                   : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
-                }`}
+              }`}
             >
               {linkedinConnected
                 ? "✅ LinkedIn Connected"
@@ -225,7 +229,7 @@ function CreatorContent() {
   );
 }
 
-// Main page component with Suspense
+// Main page component with Suspense - IMPORTANT FIX
 export default function CreatorPage() {
   return (
     <Suspense

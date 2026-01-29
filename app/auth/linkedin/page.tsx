@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getLinkedInAuthUrl } from "@/lib/linkedin";
+import { Suspense } from "react";
 
-export default function LinkedInConnectDemoPage() {
+// Inner component that uses useSearchParams
+function LinkedInConnectDemoContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+
+  // Get redirect parameter if it exists
+  const redirectParam = searchParams.get("redirect") || "/creator";
 
   async function connectDemoLinkedIn() {
     setLoading(true);
@@ -49,7 +55,7 @@ export default function LinkedInConnectDemoPage() {
         alert(`Failed to connect LinkedIn: ${error.message || "Unknown error"}`);
       } else {
         alert("LinkedIn connected (demo)");
-        router.push("/creator?connected=linkedin");
+        router.push(`${redirectParam}?connected=linkedin`);
       }
     } catch (err: any) {
       setLoading(false);
@@ -60,8 +66,11 @@ export default function LinkedInConnectDemoPage() {
 
   // Real LinkedIn OAuth function
   function connectRealLinkedIn() {
-    // Redirect to LinkedIn OAuth
-    window.location.href = getLinkedInAuthUrl();
+    // Get redirect parameter for OAuth callback
+    const oauthRedirectUrl = `${window.location.origin}/auth/linkedin/callback?redirect=${encodeURIComponent(redirectParam)}`;
+    
+    // Redirect to LinkedIn OAuth with redirect parameter
+    window.location.href = getLinkedInAuthUrl(oauthRedirectUrl);
   }
 
   return (
@@ -114,12 +123,28 @@ export default function LinkedInConnectDemoPage() {
         </div>
 
         <button
-          onClick={() => router.push("/creator")}
+          onClick={() => router.push(redirectParam)}
           className="mt-4 text-sm text-gray-500 hover:text-purple-400 underline"
         >
           ← Back to Creator Dashboard
         </button>
       </div>
     </main>
+  );
+}
+
+// Main component with Suspense wrapper
+export default function LinkedInConnectDemoPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center bg-[#0b0b14]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+          <p className="text-gray-400">Loading connection page...</p>
+        </div>
+      </main>
+    }>
+      <LinkedInConnectDemoContent />
+    </Suspense>
   );
 }
