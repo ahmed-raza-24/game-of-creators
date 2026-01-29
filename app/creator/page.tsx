@@ -1,11 +1,5 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 "use client";
-
-// Add these to prevent any prerendering issues
-
-export const fetchCache = "force-no-store";
 
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabaseClient";
