@@ -29,34 +29,13 @@ function LinkedInConnectDemoContent() {
         return;
       }
 
-      // Try without profile_data (same as TikTok fix)
-      const { error } = await supabase
-        .from("creator_social_accounts")
-        .upsert(
-          {
-            user_id: user.id,
-            provider: "linkedin",
-          },
-          {
-            onConflict: "user_id,provider",
-          }
-        );
+      // ✅ UPDATED: Redirect to callback with demo flag
+      const callbackUrl = `${window.location.origin}/auth/linkedin/callback?demo=true&redirect=${encodeURIComponent(redirectParam)}`;
+      window.location.href = callbackUrl;
 
-      setLoading(false);
+      // ❌ REMOVED: All the database code from here
+      // It will now happen in the callback page
 
-      if (error) {
-        // Better error logging
-        console.error("LinkedIn connect error details:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
-        alert(`Failed to connect LinkedIn: ${error.message || "Unknown error"}`);
-      } else {
-        alert("LinkedIn connected (demo)");
-        router.push(`${redirectParam}?connected=linkedin`);
-      }
     } catch (err: any) {
       setLoading(false);
       console.error("Unexpected error:", err);
@@ -67,12 +46,11 @@ function LinkedInConnectDemoContent() {
   // Real LinkedIn OAuth function
   function connectRealLinkedIn() {
     // Get redirect parameter for OAuth callback
-    const oauthRedirectUrl = `${window.location.origin}/auth/linkedin/callback?redirect=${encodeURIComponent(redirectParam)}`;
-    
+    const oauthRedirectUrl = `${window.location.origin}/auth/linkedin/callback?redirect=${encodeURIComponent(redirectParam)}&source=oauth`;
+
     // Redirect to LinkedIn OAuth with redirect parameter
     window.location.href = getLinkedInAuthUrl(oauthRedirectUrl);
   }
-
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0b0b14] p-6">
       <div className="max-w-md w-full bg-[#121226] border border-purple-500/20 rounded-2xl p-8 shadow-xl text-center">

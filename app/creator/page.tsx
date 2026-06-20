@@ -43,10 +43,21 @@ function CreatorContent() {
   }, []);
 
   // 🔁 Optional: handle ?connected=linkedin / tiktok
+  // Update this useEffect in your creator/page.tsx
   useEffect(() => {
+    // 🔁 Check for ?connected=linkedin in URL
     const connected = searchParams.get("connected");
     if (connected === "tiktok") checkTikTokConnection();
-    if (connected === "linkedin") checkLinkedInConnection();
+    if (connected === "linkedin") {
+      console.log("LinkedIn connection detected in URL");
+
+      // Force re-check after a short delay
+      setTimeout(() => {
+        checkLinkedInConnection();
+        // Also force a refresh of campaigns
+        fetchCampaigns();
+      }, 1000);
+    }
   }, [searchParams]);
 
   async function fetchCampaigns() {
@@ -77,20 +88,26 @@ function CreatorContent() {
   }
 
   async function checkLinkedInConnection() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) return;
 
+    // Add a small delay to ensure database is updated
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     const { data } = await supabase
       .from("creator_social_accounts")
-      .select("id")
+      .select("id, created_at")
       .eq("user_id", user.id)
       .eq("provider", "linkedin")
       .maybeSingle();
 
-    if (data) setLinkedinConnected(true);
+    console.log("LinkedIn connection check:", data); // Debug log
+
+    if (data) {
+      setLinkedinConnected(true);
+      console.log("✅ LinkedIn is connected!");
+    }
   }
 
   return (
@@ -131,11 +148,10 @@ function CreatorContent() {
                   router.push("/auth/linkedin"); // Go to LinkedIn connect page
                 }
               }}
-              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${
-                linkedinConnected
-                  ? "bg-green-500/10 text-green-400 border-green-500/40"
-                  : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
-              }`}
+              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${linkedinConnected
+                ? "bg-green-500/10 text-green-400 border-green-500/40"
+                : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
+                }`}
             >
               {linkedinConnected
                 ? "✅ LinkedIn Connected"
