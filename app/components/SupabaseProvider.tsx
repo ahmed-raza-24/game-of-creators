@@ -1,4 +1,4 @@
-// app/components/SupabaseProvider.tsx - FIXED VERSION
+// app/components/SupabaseProvider.tsx - PERSISTENT LOGIN
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -22,17 +22,16 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // 1. Check existing session
+    // 1. Check existing session - This persists across page reloads
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // ✅ REMOVED: Automatic redirect when user is on home page
-      // ✅ REMOVED: Automatic logout when accessing protected pages
-      // User ko home page pe bhi rehne do, wo khud click karega
+      // If user is logged in and tries to access home page, stay on home
+      // They can click buttons to go to dashboard
       
-      // ✅ ONLY THIS: If user NOT logged in and trying to access protected pages
+      // If user NOT logged in and trying to access protected pages
       if (!session?.user && 
           (pathname.startsWith("/creator") || 
            pathname.startsWith("/brand") || 
@@ -43,20 +42,24 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
     checkSession();
 
-    // 2. Listen for auth changes
+    // 2. Listen for auth changes (login/logout)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // ✅ ONLY logout event pe redirect karo
+      // When user logs out, redirect to home
       if (event === "SIGNED_OUT") {
         router.push("/");
       }
       
-      // ✅ SIGNED_IN event pe automatic redirect hata do
-      // User ko khud decide karne do kahin jana hai ya nahi
+      // When user logs in, they stay on current page
+      // They will navigate manually or we can redirect if on home
+      if (event === "SIGNED_IN") {
+        // If on home page, stay there - user can choose where to go
+        // No automatic redirect
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -64,6 +67,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Session will be cleared, user state will update via onAuthStateChange
     router.push("/");
   };
 

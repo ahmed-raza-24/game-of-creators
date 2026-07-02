@@ -1,4 +1,4 @@
-// app/auth/callback/page.tsx - UPDATED WITH SUSPENSE
+// app/auth/callback/page.tsx - FIXED VERSION
 "use client";
 
 import { useEffect, Suspense } from "react";
@@ -28,7 +28,6 @@ function AuthCallbackContent() {
         // Check if we have a code in URL (OAuth callback)
         if (code || hash.includes('access_token')) {
           // Let Supabase handle the OAuth callback automatically
-          // It will read the code from URL and exchange it for session
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           
           if (sessionError) {
@@ -38,36 +37,72 @@ function AuthCallbackContent() {
           }
 
           if (session?.user) {
+            // Log user info for debugging
+            console.log("User authenticated:", {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name
+            });
+
             // Check if user exists in our database
-            const { data: existingUser } = await supabase
+            const { data: existingUser, error: fetchError } = await supabase
               .from("users")
               .select("*")
               .eq("id", session.user.id)
               .single();
 
+            if (fetchError && fetchError.code !== 'PGRST116') {
+              // PGRST116 = No rows found (user doesn't exist) - this is expected for new users
+              console.error("Error checking user:", fetchError);
+            }
+
             // If new user, insert into database
             if (!existingUser) {
               const role = searchParams.get("role") || "creator";
+              
+              console.log("Creating new user with role:", role);
+              
+              const userData = {
+                id: session.user.id,
+                name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || "User",
+                email: session.user.email,
+                role: role,
+              };
+              
+              console.log("User data to insert:", userData);
+
               const { error: insertError } = await supabase
                 .from("users")
-                .insert([
-                  {
-                    id: session.user.id,
-                    name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || "User",
-                    email: session.user.email,
-                    role: role,
-                  },
-                ]);
+                .insert([userData]);
 
               if (insertError) {
-                console.error("Error inserting user:", insertError);
+                // Detailed error logging
+                console.error("Insert error details:", {
+                  message: insertError.message,
+                  code: insertError.code,
+                  details: insertError.details,
+                  hint: insertError.hint
+                });
+                
+                // Check if it's a duplicate key error
+                if (insertError.code === '23505') {
+                  console.log("User already exists, continuing...");
+                } else {
+                  alert(`Error creating user: ${insertError.message}`);
+                  router.push("/");
+                  return;
+                }
+              } else {
+                console.log("User created successfully!");
               }
             }
 
             // Redirect based on role
             const role = searchParams.get("role") || existingUser?.role || "creator";
+            console.log("Redirecting to:", role === "brand" ? "/brand" : "/creator");
             router.replace(role === "brand" ? "/brand" : "/creator");
           } else {
+            console.log("No session found");
             router.push("/");
           }
         } else {
@@ -80,8 +115,11 @@ function AuthCallbackContent() {
             router.push("/");
           }
         }
-      } catch (error) {
-        console.error("Auth callback error:", error);
+      } catch (error: any) {
+        console.error("Auth callback error:", {
+          message: error.message,
+          stack: error.stack
+        });
         router.push("/");
       }
     }

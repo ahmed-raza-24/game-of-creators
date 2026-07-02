@@ -1,10 +1,13 @@
-
+// app/creator/page.tsx - Use SupabaseProvider for user state
 "use client";
+
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getLinkedInAuthUrl } from "../../lib/linkedin";
+import { useSupabase } from "@/app/components/SupabaseProvider";
 
 type Campaign = {
   id: string;
@@ -14,51 +17,39 @@ type Campaign = {
   budget: number;
 };
 
-// Main content component wrapped in Suspense
 function CreatorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading, signOut } = useSupabase();
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [tiktokConnected, setTiktokConnected] = useState(false);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
 
-
+  // Check authentication - if not logged in, redirect
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        router.push("/");
-      }
-    };
-    checkAuth();
-  }, []);
+    if (!authLoading && !user) {
+      router.push("/");
+    }
+  }, [authLoading, user, router]);
 
-  // ✅ ONE clean useEffect
+  // Fetch data only when user is authenticated
   useEffect(() => {
-    fetchCampaigns();
-    checkTikTokConnection();
-    checkLinkedInConnection();
-  }, []);
+    if (user) {
+      fetchCampaigns();
+      checkTikTokConnection();
+      checkLinkedInConnection();
+    }
+  }, [user]);
 
-  // 🔁 Optional: handle ?connected=linkedin / tiktok
-  // Update this useEffect in your creator/page.tsx
+  // Handle URL params for connection success
   useEffect(() => {
-    // 🔁 Check for ?connected=linkedin in URL
+    if (!user) return;
     const connected = searchParams.get("connected");
     if (connected === "tiktok") checkTikTokConnection();
-    if (connected === "linkedin") {
-      console.log("LinkedIn connection detected in URL");
-
-      // Force re-check after a short delay
-      setTimeout(() => {
-        checkLinkedInConnection();
-        // Also force a refresh of campaigns
-        fetchCampaigns();
-      }, 1000);
-    }
-  }, [searchParams]);
+    if (connected === "linkedin") checkLinkedInConnection();
+  }, [searchParams, user]);
 
   async function fetchCampaigns() {
     const { data, error } = await supabase
@@ -71,10 +62,6 @@ function CreatorContent() {
   }
 
   async function checkTikTokConnection() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     if (!user) return;
 
     const { data } = await supabase
@@ -88,31 +75,33 @@ function CreatorContent() {
   }
 
   async function checkLinkedInConnection() {
-    const { data: { user } } = await supabase.auth.getUser();
-
     if (!user) return;
-
-    // Add a small delay to ensure database is updated
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     const { data } = await supabase
       .from("creator_social_accounts")
-      .select("id, created_at")
+      .select("id")
       .eq("user_id", user.id)
       .eq("provider", "linkedin")
       .maybeSingle();
 
-    console.log("LinkedIn connection check:", data); // Debug log
+    if (data) setLinkedinConnected(true);
+  }
 
-    if (data) {
-      setLinkedinConnected(true);
-      console.log("✅ LinkedIn is connected!");
-    }
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-[#0b0b14] flex items-center justify-center">
+        <p className="text-gray-400">Loading...</p>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
     <main className="min-h-screen bg-[#0b0b14]">
-      {/* 🔝 TOP BAR */}
+      {/* TOP BAR */}
       <div className="sticky top-0 z-20 bg-[#0b0b14]/90 backdrop-blur border-b border-purple-500/10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -123,12 +112,12 @@ function CreatorContent() {
               Creator Dashboard
             </h1>
             <p className="text-sm text-gray-400">
-              Explore campaigns & submit your content
+              Welcome, {user.email}
             </p>
           </div>
 
-          {/* 🔗 CONNECT BUTTONS */}
-          <div className="flex gap-3 items-center">
+          {/* CONNECT BUTTONS */}
+          <div className="flex gap-3 items-center flex-wrap">
             {!tiktokConnected ? (
               <button
                 onClick={() => router.push("/auth/tiktok")}
@@ -145,13 +134,14 @@ function CreatorContent() {
             <button
               onClick={() => {
                 if (!linkedinConnected) {
-                  router.push("/auth/linkedin"); // Go to LinkedIn connect page
+                  router.push("/auth/linkedin");
                 }
               }}
-              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${linkedinConnected
-                ? "bg-green-500/10 text-green-400 border-green-500/40"
-                : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
-                }`}
+              className={`px-4 py-2 rounded-lg border transition cursor-pointer ${
+                linkedinConnected
+                  ? "bg-green-500/10 text-green-400 border-green-500/40"
+                  : "bg-[#121226] text-white border-purple-500/30 hover:bg-purple-500/10"
+              }`}
             >
               {linkedinConnected
                 ? "✅ LinkedIn Connected"
@@ -165,12 +155,9 @@ function CreatorContent() {
               Home
             </button>
 
-            {/* ✅ LOGOUT BUTTON ADDED */}
+            {/* LOGOUT BUTTON */}
             <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.push("/");
-              }}
+              onClick={signOut}
               className="text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
             >
               Logout
@@ -179,7 +166,7 @@ function CreatorContent() {
         </div>
       </div>
 
-      {/* 📦 CONTENT */}
+      {/* CONTENT */}
       <div className="max-w-6xl mx-auto p-6">
         {loading && <p className="text-gray-400">Loading campaigns...</p>}
 
@@ -187,7 +174,7 @@ function CreatorContent() {
           <p className="text-gray-500">No campaigns available</p>
         )}
 
-        {/* 🔥 GRID CARDS */}
+        {/* GRID CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {campaigns.map((c) => (
             <div
@@ -202,7 +189,6 @@ function CreatorContent() {
                 {c.description}
               </p>
 
-              {/* 💰 BUDGET */}
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm text-green-400 font-semibold">
                   💰 ${c.budget}
@@ -213,7 +199,6 @@ function CreatorContent() {
                 </span>
               </div>
 
-              {/* ACTIONS */}
               <div className="flex justify-end gap-3 mt-auto">
                 <button
                   onClick={() => router.push(`/creator/submit/${c.id}`)}
@@ -239,7 +224,6 @@ function CreatorContent() {
   );
 }
 
-// Main page component with Suspense - IMPORTANT FIX
 export default function CreatorPage() {
   return (
     <Suspense

@@ -1,11 +1,13 @@
-// app/page.tsx - ORIGINAL VERSION (NO UNNECESSARY CHANGES)
+// app/page.tsx - SHOW USER STATUS
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signInWithGoogle } from "@/lib/supabaseClient"; // Original import
+import { signInWithGoogle } from "@/lib/supabaseClient";
+import { useSupabase } from "@/app/components/SupabaseProvider";
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, loading } = useSupabase();
 
   async function signIn(role: "creator" | "brand") {
     try {
@@ -14,6 +16,14 @@ export default function HomePage() {
       alert("Login failed. Please try again.");
       console.error(error);
     }
+  }
+
+  if (loading) {
+    return (
+      <main className="bg-[#080812] text-white overflow-hidden min-h-screen flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </main>
+    );
   }
 
   return (
@@ -32,6 +42,29 @@ export default function HomePage() {
             Where creators & brands collaborate through performance-based campaigns.
           </p>
 
+          {/* Show if user is logged in */}
+          {user && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <p className="text-green-400 text-sm font-medium">
+                ✅ Logged in as {user.email}
+              </p>
+              <div className="flex gap-2 mt-2 justify-center">
+                <button
+                  onClick={() => router.push("/creator")}
+                  className="text-xs px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                >
+                  Go to Creator Dashboard
+                </button>
+                <button
+                  onClick={() => router.push("/brand")}
+                  className="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                  Go to Brand Dashboard
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-4">
             <button
               onClick={() => signIn("creator")}
@@ -46,6 +79,20 @@ export default function HomePage() {
             >
               Continue as Brand
             </button>
+
+            {/* Show logout button if logged in */}
+            {user && (
+              <button
+                onClick={async () => {
+                  const { supabase } = await import("@/lib/supabaseClient");
+                  await supabase.auth.signOut();
+                  router.push("/");
+                }}
+                className="py-2 text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
       </section>

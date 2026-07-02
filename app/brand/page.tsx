@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { useSupabase } from "@/app/components/SupabaseProvider";
 
 type Campaign = {
   id: string;
@@ -14,29 +15,28 @@ type Campaign = {
 
 export default function BrandPage() {
   const router = useRouter();
+  const { user: supabaseUser, loading: authLoading, signOut } = useSupabase();
+  
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [platform, setPlatform] = useState("tiktok");
   const [budget, setBudget] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
 
+  // Check authentication - if not logged in, redirect
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        router.push("/");
-      } else {
-        setUser(session.user);
-      }
-    };
-    checkAuth();
-  }, []);
+    if (!authLoading && !supabaseUser) {
+      router.push("/");
+    }
+  }, [authLoading, supabaseUser, router]);
 
+  // Fetch campaigns when user is authenticated
   useEffect(() => {
-    fetchCampaigns();
-  }, []);
+    if (supabaseUser) {
+      fetchCampaigns();
+    }
+  }, [supabaseUser]);
 
   async function fetchCampaigns() {
     const { data, error } = await supabase
@@ -48,22 +48,12 @@ export default function BrandPage() {
   }
 
   async function createCampaign() {
-    if (!title || !budget) {
+    if (!title || !budget || !supabaseUser) {
       alert("Title & budget required");
       return;
     }
 
     setLoading(true);
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      alert("Please login again");
-      router.push("/");
-      setLoading(false);
-      return;
-    }
 
     const { error } = await supabase.from("campaigns").insert([
       {
@@ -71,7 +61,7 @@ export default function BrandPage() {
         description,
         platform,
         budget: Number(budget),
-        brand_id: user.id, // Use actual user ID
+        brand_id: supabaseUser.id, // Use actual user ID
       },
     ]);
 
@@ -113,9 +103,21 @@ export default function BrandPage() {
     }
   }
 
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-[#0b0b14] flex items-center justify-center">
+        <p className="text-gray-400">Loading...</p>
+      </main>
+    );
+  }
+
+  if (!supabaseUser) {
+    return null;
+  }
+
   return (
     <main className="min-h-screen bg-[#0b0b14] p-6">
-      {/* Header - NO CHANGES */}
+      {/* Header */}
       <div className="max-w-5xl mx-auto mb-8">
         <h1
           className="text-3xl font-extrabold mb-2"
@@ -124,7 +126,7 @@ export default function BrandPage() {
           Brand Dashboard
         </h1>
         <p className="text-gray-400">
-          Launch campaigns and collaborate with creators
+          Welcome, {supabaseUser.email}
         </p>
 
         <div className="flex justify-end">
@@ -135,11 +137,9 @@ export default function BrandPage() {
             ← Back to Home
           </button>
 
+          {/* Logout button using signOut from useSupabase */}
           <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.push("/");
-            }}
+            onClick={signOut}
             className="mt-6 ml-4 text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
           >
             Logout
@@ -148,7 +148,7 @@ export default function BrandPage() {
       </div>
 
       <div className="max-w-5xl mx-auto grid gap-10">
-        {/* Create Campaign - NO CHANGES */}
+        {/* Create Campaign */}
         <div className="bg-[#121226] border border-purple-500/20 rounded-2xl p-6 shadow-lg">
           <h2 className="text-lg font-semibold text-white mb-4">
             Create Campaign
@@ -197,7 +197,7 @@ export default function BrandPage() {
           </button>
         </div>
 
-        {/* Your Campaigns - NO CHANGES */}
+        {/* Your Campaigns */}
         <div>
           <h2 className="text-lg font-semibold text-white mb-4">
             Your Campaigns
