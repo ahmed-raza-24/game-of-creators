@@ -1,9 +1,8 @@
-// lib/supabaseClient.ts - UPDATED FOR VERCEL
+// lib/supabaseClient.ts
 import { createClient } from "@supabase/supabase-js";
 
 // Dynamic redirect URL for both local and Vercel
 const getRedirectUrl = () => {
-  // Server side (build time) - Vercel compatible
   if (typeof window === 'undefined') {
     return process.env.NEXT_PUBLIC_SITE_URL 
       ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
@@ -11,7 +10,6 @@ const getRedirectUrl = () => {
         ? `https://${process.env.VERCEL_URL}/auth/callback`
         : 'http://localhost:3000/auth/callback';
   }
-  // Client side
   return `${window.location.origin}/auth/callback`;
 };
 
@@ -29,7 +27,6 @@ export const supabase = createClient(
   }
 );
 
-// Helper function for OAuth
 export const signInWithGoogle = async (role: "creator" | "brand") => {
   const redirectTo = getRedirectUrl();
   

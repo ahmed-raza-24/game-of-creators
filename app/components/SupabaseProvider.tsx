@@ -1,4 +1,4 @@
-// app/components/SupabaseProvider.tsx - PERSISTENT LOGIN
+// app/components/SupabaseProvider.tsx
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -22,14 +22,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // 1. Check existing session - This persists across page reloads
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // If user is logged in and tries to access home page, stay on home
-      // They can click buttons to go to dashboard
       
       // If user NOT logged in and trying to access protected pages
       if (!session?.user && 
@@ -42,23 +38,14 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
     checkSession();
 
-    // 2. Listen for auth changes (login/logout)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // When user logs out, redirect to home
       if (event === "SIGNED_OUT") {
         router.push("/");
-      }
-      
-      // When user logs in, they stay on current page
-      // They will navigate manually or we can redirect if on home
-      if (event === "SIGNED_IN") {
-        // If on home page, stay there - user can choose where to go
-        // No automatic redirect
       }
     });
 
@@ -67,7 +54,6 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    // Session will be cleared, user state will update via onAuthStateChange
     router.push("/");
   };
 

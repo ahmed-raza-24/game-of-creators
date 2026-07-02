@@ -1,4 +1,3 @@
-// app/creator/page.tsx - Use SupabaseProvider for user state
 "use client";
 
 export const dynamic = "force-dynamic";
@@ -20,36 +19,33 @@ type Campaign = {
 function CreatorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading: authLoading, signOut } = useSupabase();
+  const { user: supabaseUser, loading: authLoading, signOut } = useSupabase();
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [tiktokConnected, setTiktokConnected] = useState(false);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
 
-  // Check authentication - if not logged in, redirect
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !supabaseUser) {
       router.push("/");
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, supabaseUser, router]);
 
-  // Fetch data only when user is authenticated
   useEffect(() => {
-    if (user) {
+    if (supabaseUser) {
       fetchCampaigns();
       checkTikTokConnection();
       checkLinkedInConnection();
     }
-  }, [user]);
+  }, [supabaseUser]);
 
-  // Handle URL params for connection success
   useEffect(() => {
-    if (!user) return;
+    if (!supabaseUser) return;
     const connected = searchParams.get("connected");
     if (connected === "tiktok") checkTikTokConnection();
     if (connected === "linkedin") checkLinkedInConnection();
-  }, [searchParams, user]);
+  }, [searchParams, supabaseUser]);
 
   async function fetchCampaigns() {
     const { data, error } = await supabase
@@ -62,12 +58,12 @@ function CreatorContent() {
   }
 
   async function checkTikTokConnection() {
-    if (!user) return;
+    if (!supabaseUser) return;
 
     const { data } = await supabase
       .from("creator_social_accounts")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", supabaseUser.id)
       .eq("provider", "tiktok")
       .maybeSingle();
 
@@ -75,12 +71,12 @@ function CreatorContent() {
   }
 
   async function checkLinkedInConnection() {
-    if (!user) return;
+    if (!supabaseUser) return;
 
     const { data } = await supabase
       .from("creator_social_accounts")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", supabaseUser.id)
       .eq("provider", "linkedin")
       .maybeSingle();
 
@@ -95,13 +91,12 @@ function CreatorContent() {
     );
   }
 
-  if (!user) {
+  if (!supabaseUser) {
     return null;
   }
 
   return (
     <main className="min-h-screen bg-[#0b0b14]">
-      {/* TOP BAR */}
       <div className="sticky top-0 z-20 bg-[#0b0b14]/90 backdrop-blur border-b border-purple-500/10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -112,11 +107,10 @@ function CreatorContent() {
               Creator Dashboard
             </h1>
             <p className="text-sm text-gray-400">
-              Welcome, {user.email}
+              Welcome, {supabaseUser.email}
             </p>
           </div>
 
-          {/* CONNECT BUTTONS */}
           <div className="flex gap-3 items-center flex-wrap">
             {!tiktokConnected ? (
               <button
@@ -155,7 +149,6 @@ function CreatorContent() {
               Home
             </button>
 
-            {/* LOGOUT BUTTON */}
             <button
               onClick={signOut}
               className="text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
@@ -166,7 +159,6 @@ function CreatorContent() {
         </div>
       </div>
 
-      {/* CONTENT */}
       <div className="max-w-6xl mx-auto p-6">
         {loading && <p className="text-gray-400">Loading campaigns...</p>}
 
@@ -174,7 +166,6 @@ function CreatorContent() {
           <p className="text-gray-500">No campaigns available</p>
         )}
 
-        {/* GRID CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {campaigns.map((c) => (
             <div

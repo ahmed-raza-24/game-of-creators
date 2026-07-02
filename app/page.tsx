@@ -1,16 +1,24 @@
-// app/page.tsx - SHOW USER STATUS
 "use client";
 
 import { useRouter } from "next/navigation";
 import { signInWithGoogle } from "@/lib/supabaseClient";
-import { useSupabase } from "@/app/components/SupabaseProvider";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, loading } = useSupabase();
 
   async function signIn(role: "creator" | "brand") {
     try {
+      // Pehle check karo agar user already logged in hai toh direct dashboard pe bhejo
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Already logged in - direct redirect
+        router.push(role === "brand" ? "/brand" : "/creator");
+        return;
+      }
+      
+      // Nahi toh Google login start karo
       await signInWithGoogle(role);
     } catch (error) {
       alert("Login failed. Please try again.");
@@ -18,19 +26,9 @@ export default function HomePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <main className="bg-[#080812] text-white overflow-hidden min-h-screen flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
-      </main>
-    );
-  }
-
   return (
     <main className="bg-[#080812] text-white overflow-hidden">
-      {/* ================= HERO ================= */}
       <section className="relative min-h-screen flex items-center justify-center px-6">
-        {/* Glow background */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#6d28d955,transparent_60%)]" />
 
         <div className="relative bg-[#121226]/80 backdrop-blur-xl border border-purple-500/30 p-10 rounded-3xl shadow-[0_0_60px_-15px rgba(168,85,247,0.6)] w-full max-w-md text-center">
@@ -42,33 +40,10 @@ export default function HomePage() {
             Where creators & brands collaborate through performance-based campaigns.
           </p>
 
-          {/* Show if user is logged in */}
-          {user && (
-            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <p className="text-green-400 text-sm font-medium">
-                ✅ Logged in as {user.email}
-              </p>
-              <div className="flex gap-2 mt-2 justify-center">
-                <button
-                  onClick={() => router.push("/creator")}
-                  className="text-xs px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
-                >
-                  Go to Creator Dashboard
-                </button>
-                <button
-                  onClick={() => router.push("/brand")}
-                  className="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                >
-                  Go to Brand Dashboard
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="flex flex-col gap-4">
             <button
               onClick={() => signIn("creator")}
-              className="py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold transition hover:scale-[1.05] hover:shadow-[0_0_25px_rgba(168,85,247,0.8)] cursor-pointer"
+              className="py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold transition hover:scale-[1.05] hover:shadow-[0_0_25px rgba(168,85,247,0.8)] cursor-pointer"
             >
               Continue as Creator
             </button>
@@ -79,25 +54,11 @@ export default function HomePage() {
             >
               Continue as Brand
             </button>
-
-            {/* Show logout button if logged in */}
-            {user && (
-              <button
-                onClick={async () => {
-                  const { supabase } = await import("@/lib/supabaseClient");
-                  await supabase.auth.signOut();
-                  router.push("/");
-                }}
-                className="py-2 text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
-              >
-                Logout
-              </button>
-            )}
           </div>
         </div>
       </section>
 
-      {/* ================= HOW IT WORKS ================= */}
+      {/* Rest of the sections remain same */}
       <section className="py-24 px-6 max-w-6xl mx-auto">
         <h2
           className="text-4xl font-extrabold text-center mb-16"
@@ -133,7 +94,6 @@ export default function HomePage() {
               transition-all duration-500 hover:-translate-y-4 hover:rotate-[0.3deg]
               hover:shadow-[0_20px_60px_-15px rgba(168,85,247,0.7)]"
             >
-              {/* Glow */}
               <div
                 className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition bg-gradient-to-br ${item.color} blur-2xl -z-10`}
               />
@@ -149,7 +109,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ================= ROLES ================= */}
       <section className="py-24 px-6 bg-[#0c0c1f]">
         <h2
           className="text-4xl font-extrabold text-center mb-16"
@@ -162,7 +121,6 @@ export default function HomePage() {
         </h2>
 
         <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-          {/* Creator */}
           <div
             className="group relative bg-[#121226] rounded-3xl p-10 border border-purple-500/30
             transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_25px_70px_-20px rgba(168,85,247,0.8)]"
@@ -181,7 +139,6 @@ export default function HomePage() {
             </ul>
           </div>
 
-          {/* Brand */}
           <div
             className="group relative bg-[#121226] rounded-3xl p-10 border border-indigo-500/30
             transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_25px_70px_-20px rgba(99,102,241,0.8)]"
@@ -202,7 +159,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ================= FOOTER ================= */}
       <footer className="py-10 text-center text-gray-500 text-sm">
         © {new Date().getFullYear()} All rights reserved.
       </footer>

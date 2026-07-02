@@ -24,14 +24,12 @@ export default function BrandPage() {
   const [budget, setBudget] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
 
-  // Check authentication - if not logged in, redirect
   useEffect(() => {
     if (!authLoading && !supabaseUser) {
       router.push("/");
     }
   }, [authLoading, supabaseUser, router]);
 
-  // Fetch campaigns when user is authenticated
   useEffect(() => {
     if (supabaseUser) {
       fetchCampaigns();
@@ -61,7 +59,7 @@ export default function BrandPage() {
         description,
         platform,
         budget: Number(budget),
-        brand_id: supabaseUser.id, // Use actual user ID
+        brand_id: supabaseUser.id,
       },
     ]);
 
@@ -71,7 +69,6 @@ export default function BrandPage() {
       console.error("Full error:", JSON.stringify(error, null, 2));
 
       if (error.code === '42501') {
-        // Try with null brand_id as fallback
         const { error: fallbackError } = await supabase.from("campaigns").insert([
           {
             title,
@@ -117,7 +114,6 @@ export default function BrandPage() {
 
   return (
     <main className="min-h-screen bg-[#0b0b14] p-6">
-      {/* Header */}
       <div className="max-w-5xl mx-auto mb-8">
         <h1
           className="text-3xl font-extrabold mb-2"
@@ -137,7 +133,6 @@ export default function BrandPage() {
             ← Back to Home
           </button>
 
-          {/* Logout button using signOut from useSupabase */}
           <button
             onClick={signOut}
             className="mt-6 ml-4 text-sm text-red-400 hover:text-red-300 underline cursor-pointer"
@@ -148,7 +143,6 @@ export default function BrandPage() {
       </div>
 
       <div className="max-w-5xl mx-auto grid gap-10">
-        {/* Create Campaign */}
         <div className="bg-[#121226] border border-purple-500/20 rounded-2xl p-6 shadow-lg">
           <h2 className="text-lg font-semibold text-white mb-4">
             Create Campaign
@@ -197,7 +191,6 @@ export default function BrandPage() {
           </button>
         </div>
 
-        {/* Your Campaigns */}
         <div>
           <h2 className="text-lg font-semibold text-white mb-4">
             Your Campaigns
